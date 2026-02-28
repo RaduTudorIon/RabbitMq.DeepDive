@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="RabbitMq.DeepDive.ApiService/RabbitMq.DeepDive.ApiService.csproj" />
+  <Project Path="RabbitMq.DeepDive.AppHost/RabbitMq.DeepDive.AppHost.csproj" />
+  <Project Path="RabbitMq.DeepDive.Consumer/RabbitMq.DeepDive.Consumer.csproj" />
+  <Project Path="RabbitMq.DeepDive.Messages/RabbitMq.DeepDive.Messages.csproj" />
+  <Project Path="RabbitMq.DeepDive.Producer/RabbitMq.DeepDive.Producer.csproj" />
+  <Project Path="RabbitMq.DeepDive.ServiceDefaults/RabbitMq.DeepDive.ServiceDefaults.csproj" />
+  <Project Path="RabbitMq.DeepDive.Web/RabbitMq.DeepDive.Web.csproj" />
+</Solution>

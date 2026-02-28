@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "RabbitMq.DeepDive.Producer": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:50282;http://localhost:50284"
+    }
+  }
+}

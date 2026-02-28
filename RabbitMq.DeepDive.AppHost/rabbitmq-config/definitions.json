@@ -1,0 +1,48 @@
+{
+  "users": [
+    {
+      "name": "producer",
+      "password": "changeme",
+      "tags": "management"
+    },
+    {
+      "name": "consumer",
+      "password": "changeme",
+      "tags": "management"
+    },
+    {
+      "name": "admin",
+      "password": "changeme",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "permissions": [
+    {
+      "user": "producer",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "consumer",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [],
+  "queues": [],
+  "bindings": []
+}
