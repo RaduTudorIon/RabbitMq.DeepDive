@@ -16,10 +16,4 @@
     <PackageReference Include="WolverineFx.RabbitMQ" Version="3.*" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Models\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
