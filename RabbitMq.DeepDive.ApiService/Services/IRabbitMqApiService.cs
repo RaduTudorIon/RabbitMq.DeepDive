@@ -64,4 +64,25 @@ public interface IRabbitMqApiService
     /// <param name="queueName">Name of the queue to purge</param>
     /// <param name="vhost">Virtual host name</param>
     Task PurgeQueueAsync(string queueName, string vhost = "/");
+
+    /// <summary>
+    /// Creates or updates a dynamic shovel parameter in a vhost.
+    /// </summary>
+    /// <param name="vhost">Vhost where the shovel parameter is stored</param>
+    /// <param name="shovelName">Shovel parameter name</param>
+    /// <param name="sourceUri">Source URI including source vhost</param>
+    /// <param name="sourceQueue">Source queue name</param>
+    /// <param name="destinationUri">Destination URI including destination vhost</param>
+    /// <param name="destinationQueue">Destination queue name</param>
+    /// <param name="prefetchCount">Shovel prefetch count</param>
+    /// <param name="reconnectDelaySeconds">Reconnect delay in seconds</param>
+    Task CreateShovelAsync(
+        string vhost,
+        string shovelName,
+        string sourceUri,
+        string sourceQueue,
+        string destinationUri,
+        string destinationQueue,
+        int prefetchCount = 1000,
+        int reconnectDelaySeconds = 5);
 }

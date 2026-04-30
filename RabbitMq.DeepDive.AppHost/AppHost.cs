@@ -1,11 +1,13 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var configPath = Path.Combine(builder.AppHostDirectory, "rabbitmq-config");
+var enabledPluginsPath = Path.Combine(configPath, "enabled_plugins");
 Console.WriteLine($"RabbitMQ config path: {configPath}");
 
 var rabbit = builder.AddRabbitMQ("rabbitmq")
     .WithManagementPlugin()
-    .WithBindMount(configPath, "/etc/rabbitmq/conf.d");
+    .WithBindMount(configPath, "/etc/rabbitmq/conf.d")
+    .WithBindMount(enabledPluginsPath, "/etc/rabbitmq/enabled_plugins");
 
 var apiService = builder.AddProject<Projects.RabbitMq_DeepDive_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")

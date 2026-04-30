@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 
 namespace RabbitMq.DeepDive.ApiService.Services;
 
@@ -120,6 +122,19 @@ public class RabbitMqApiService : IRabbitMqApiService
         response.EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// Executes a PUT request to the RabbitMQ Management API
+    /// </summary>
+    /// <param name="endpoint">API endpoint (relative to base URL)</param>
+    /// <param name="payload">JSON payload object</param>
+    private async Task PutAsync(string endpoint, object payload)
+    {
+        using var client = CreateAuthenticatedClient();
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        var response = await client.PutAsync(endpoint.TrimStart('/'), content);
+        response.EnsureSuccessStatusCode();
+    }
+
     /// <inheritdoc />
     public async Task<string> ExportDefinitionsAsync()
     {
@@ -137,6 +152,52 @@ public class RabbitMqApiService : IRabbitMqApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to export broker definitions");
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task CreateShovelAsync(
+        string vhost,
+        string shovelName,
+        string sourceUri,
+        string sourceQueue,
+        string destinationUri,
+        string destinationQueue,
+        int prefetchCount = 1000,
+        int reconnectDelaySeconds = 5)
+    {
+        try
+        {
+            _logger.LogInformation("Creating shovel {ShovelName} in vhost {VHost}", shovelName, vhost);
+
+            var encodedVhost = Uri.EscapeDataString(vhost);
+            var encodedName = Uri.EscapeDataString(shovelName);
+
+            var payload = new
+            {
+                value = new Dictionary<string, object>
+                {
+                    ["src-protocol"] = "amqp091",
+                    ["src-uri"] = sourceUri,
+                    ["src-queue"] = sourceQueue,
+                    ["dest-protocol"] = "amqp091",
+                    ["dest-uri"] = destinationUri,
+                    ["dest-queue"] = destinationQueue,
+                    ["ack-mode"] = "on-confirm",
+                    ["prefetch-count"] = prefetchCount,
+                    ["reconnect-delay"] = reconnectDelaySeconds,
+                    ["delete-after"] = "never"
+                }
+            };
+
+            await PutAsync($"/parameters/shovel/{encodedVhost}/{encodedName}", payload);
+
+            _logger.LogInformation("Successfully created shovel {ShovelName}", shovelName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create shovel {ShovelName} in vhost {VHost}", shovelName, vhost);
             throw;
         }
     }

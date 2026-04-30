@@ -25,7 +25,7 @@ builder.Host.UseWolverine(opts =>
         rabbit.Port = port;
         rabbit.UserName = "producer";
         rabbit.Password = "changeme";
-        rabbit.VirtualHost = "/";
+        rabbit.VirtualHost = "TestVhost";
     })
     .AutoProvision();
 

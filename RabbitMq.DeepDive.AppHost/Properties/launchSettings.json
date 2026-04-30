@@ -6,9 +6,10 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "applicationUrl": "https://localhost:17272;http://localhost:15264",
-      "environmentVariables": {
+        "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:17272;http://localhost:15264",
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21000",
         "ASPIRE_DASHBOARD_MCP_ENDPOINT_URL": "https://localhost:23140",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22018"
@@ -19,9 +20,10 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "applicationUrl": "http://localhost:15264",
-      "environmentVariables": {
+        "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:15264",
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19290",
         "ASPIRE_DASHBOARD_MCP_ENDPOINT_URL": "http://localhost:18037",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20273"

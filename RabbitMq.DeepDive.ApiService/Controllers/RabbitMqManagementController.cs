@@ -46,6 +46,51 @@ public class RabbitMqManagementController : ControllerBase
     }
 
     /// <summary>
+    /// Creates or updates a dynamic shovel using RabbitMQ Management API.
+    /// Shovel name is generated from source/destination vhost and queue names.
+    /// </summary>
+    [HttpPost("shovels")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateShovel(
+        [FromQuery] string sourceVhost,
+        [FromQuery] string sourceQueueName,
+        [FromQuery] string destinationVhost,
+        [FromQuery] string destinationQueueName)
+    {
+        if (string.IsNullOrWhiteSpace(sourceVhost) ||
+            string.IsNullOrWhiteSpace(sourceQueueName) ||
+            string.IsNullOrWhiteSpace(destinationVhost) ||
+            string.IsNullOrWhiteSpace(destinationQueueName))
+        {
+            return BadRequest("sourceVhost, sourceQueueName, destinationVhost and destinationQueueName are required.");
+        }
+
+        var shovelName = $"{sourceVhost}_{sourceQueueName}_to_{destinationVhost}_{destinationQueueName}";
+        var sourceUri = $"amqp://admin:changeme@localhost/{sourceVhost}";
+        var destinationUri = $"amqp://admin:changeme@localhost/{destinationVhost}";
+
+        try
+        {
+            await rabbitMqApiService.CreateShovelAsync(
+                destinationVhost,
+                shovelName,
+                sourceUri,
+                sourceQueueName,
+                destinationUri,
+                destinationQueueName);
+
+            logger.LogInformation("Created shovel {ShovelName} in vhost {VHost}", shovelName, destinationVhost);
+            return StatusCode(StatusCodes.Status201Created, new { message = "Shovel created", shovelName, vhost = destinationVhost });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create shovel {ShovelName} in vhost {VHost}", shovelName, destinationVhost);
+            return Problem("Failed to create shovel", statusCode: 500);
+        }
+    }
+
+    /// <summary>
     /// Exports the complete broker definitions (queues, exchanges, bindings, users, vhosts, policies, etc.)
     /// This is useful for backup, migration, or infrastructure-as-code scenarios.
     /// The exported JSON can be imported back using the RabbitMQ Management API POST /api/definitions endpoint.
@@ -62,6 +107,7 @@ public class RabbitMqManagementController : ControllerBase
             // Return as raw JSON with proper content type
             return Content(definitions, "application/json");
         }
+
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to export broker definitions");
