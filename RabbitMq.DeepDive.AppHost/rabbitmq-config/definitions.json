@@ -1,6 +1,11 @@
 {
   "users": [
     {
+      "name": "guest",
+      "password": "guest",
+      "tags": "administrator"
+    },
+    {
       "name": "producer",
       "password": "changeme",
       "tags": "management"
@@ -17,10 +22,18 @@
     }
   ],
   "vhosts": [
+    { "name": "/" },
     { "name": "TestVhost" },
     { "name": "TestVhost2" }
   ],
   "permissions": [
+    {
+      "user": "guest",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
     {
       "user": "producer",
       "vhost": "TestVhost",

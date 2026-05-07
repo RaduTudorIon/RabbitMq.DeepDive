@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RabbitMq.DeepDive.ApiService\RabbitMq.DeepDive.ApiService.csproj" />
-    <ProjectReference Include="..\RabbitMq.DeepDive.Web\RabbitMq.DeepDive.Web.csproj" />
     <ProjectReference Include="..\RabbitMq.DeepDive.Producer\RabbitMq.DeepDive.Producer.csproj" />
     <ProjectReference Include="..\RabbitMq.DeepDive.Consumer\RabbitMq.DeepDive.Consumer.csproj" />
   </ItemGroup>
