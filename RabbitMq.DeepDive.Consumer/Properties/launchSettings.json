@@ -2,12 +2,11 @@
   "profiles": {
     "RabbitMq.DeepDive.Consumer": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5201",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:50281;http://localhost:50283"
-      },
-      "applicationUrl": "https://localhost:50281;http://localhost:50283"
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   }
 }
