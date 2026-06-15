@@ -5,10 +5,12 @@ var enabledPluginsPath = Path.Combine(configPath, "enabled_plugins");
 var prometheusConfigPath = Path.Combine(builder.AppHostDirectory, "prometheus");
 var grafanaProvisioningPath = Path.Combine(builder.AppHostDirectory, "grafana", "provisioning");
 var grafanaDashboardsPath = Path.Combine(builder.AppHostDirectory, "grafana", "dashboards");
+var grafanaConfigPath = Path.Combine(builder.AppHostDirectory, "grafana", "grafana.ini");
 Console.WriteLine($"RabbitMQ config path: {configPath}");
 
 var rabbitUser = builder.AddParameter("rabbitmq-health-user", "guest");
 var rabbitPassword = builder.AddParameter("rabbitmq-health-password", "guest", secret: true);
+var smtpPassword = builder.AddParameter("grafana-smtp-password", secret: true);
 
 var rabbit = builder.AddRabbitMQ("rabbitmq", userName: rabbitUser, password: rabbitPassword, port: 5672)
     .WithManagementPlugin(port: 15672)
@@ -34,6 +36,8 @@ var grafana = builder.AddContainer("grafana", "grafana/grafana-oss", "11.2.0")
     .WithEnvironment("GF_SECURITY_ADMIN_PASSWORD", "admin")
     .WithEnvironment("GF_AUTH_ANONYMOUS_ENABLED", "true")
     .WithEnvironment("GF_AUTH_ANONYMOUS_ORG_ROLE", "Viewer")
+    .WithEnvironment("GF_SMTP_PASSWORD", smtpPassword)
+    .WithBindMount(grafanaConfigPath, "/etc/grafana/grafana.ini")
     .WithBindMount(grafanaProvisioningPath, "/etc/grafana/provisioning")
     .WithBindMount(grafanaDashboardsPath, "/etc/grafana/provisioning/dashboards/json")
     .WaitFor(prometheus);

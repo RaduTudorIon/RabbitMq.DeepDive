@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.Rabbitmq" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="1.2.63" />
     <PackageReference Include="WolverineFx" Version="5.35.2" />
     <PackageReference Include="WolverineFx.RabbitMQ" Version="5.35.2" />
   </ItemGroup>

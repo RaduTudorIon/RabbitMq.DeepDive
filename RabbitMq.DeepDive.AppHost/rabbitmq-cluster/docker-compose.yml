@@ -1,0 +1,71 @@
+services:
+  rabbitmq1:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq1
+    hostname: rabbitmq1
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq-cluster-cookie
+      RABBITMQ_NODENAME: rabbit@rabbitmq1
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq1-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../rabbitmq-config/definitions.json:/etc/rabbitmq/definitions.json:ro
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  rabbitmq2:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq2
+    hostname: rabbitmq2
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq-cluster-cookie
+      RABBITMQ_NODENAME: rabbit@rabbitmq2
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq2-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../rabbitmq-config/definitions.json:/etc/rabbitmq/definitions.json:ro
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  rabbitmq3:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq3
+    hostname: rabbitmq3
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq-cluster-cookie
+      RABBITMQ_NODENAME: rabbit@rabbitmq3
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq3-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../rabbitmq-config/definitions.json:/etc/rabbitmq/definitions.json:ro
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  rabbitmq1-data:
+  rabbitmq2-data:
+  rabbitmq3-data:

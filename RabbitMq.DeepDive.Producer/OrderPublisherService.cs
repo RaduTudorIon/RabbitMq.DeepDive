@@ -34,7 +34,7 @@ public class OrderPublisherService : BackgroundService
                 "Published order {OrderId}: {ProductName} x{Quantity} @ {Price:C}",
                 order.OrderId, order.ProductName, order.Quantity, order.Price);
 
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            //await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
 }

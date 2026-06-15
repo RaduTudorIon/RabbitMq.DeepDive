@@ -1,0 +1,450 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: RabbitMQ Critical Alerts
+    folder: RabbitMQ
+    interval: 30s
+    rules:
+      - uid: rabbitmq_no_consumers
+        title: No Consumers on Orders Queue
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rabbitmq_queue_consumers{queue="orders"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          description: "The Orders queue has no active consumers. Messages will accumulate and not be processed."
+          summary: "No consumers detected on orders queue"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#-active-consumers"
+        labels:
+          severity: critical
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_high_backlog
+        title: High Message Backlog on Orders Queue
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rabbitmq_queue_messages_ready{queue="orders"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 100
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: "Orders queue has {{ $values.A.Value }} ready messages (threshold: 100). Consumer processing cannot keep up with incoming messages."
+          summary: "High backlog detected on orders queue"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#queue-backlog-left"
+        labels:
+          severity: critical
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_high_redelivery_rate
+        title: High Message Redelivery Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="orders"}[5m])
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 3m
+        annotations:
+          description: "Message redelivery rate is {{ $values.A.Value | humanize }} msg/sec (threshold: 5 msg/sec). This indicates message processing failures. Check application logs and circuit breaker status."
+          summary: "High redelivery rate on orders queue"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#retry-rate-left"
+        labels:
+          severity: critical
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_memory_pressure
+        title: RabbitMQ Memory Pressure
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rabbitmq_node_mem_used / rabbitmq_node_mem_limit
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          description: "RabbitMQ memory usage is at {{ $values.A.Value | humanizePercentage }} of limit. Flow control may be triggered soon. Consider increasing memory limits or investigating memory leaks."
+          summary: "RabbitMQ memory usage critical"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#node-pressure-left"
+        labels:
+          severity: critical
+          component: rabbitmq
+        isPaused: false
+
+  - orgId: 1
+    name: RabbitMQ Warning Alerts
+    folder: RabbitMQ
+    interval: 1m
+    rules:
+      - uid: rabbitmq_low_consumer_utilization
+        title: Low Consumer Utilization on Orders Queue
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rabbitmq_queue_consumer_utilisation{queue="orders"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.5
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: mean
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        annotations:
+          description: "Consumer utilization is {{ $values.A.Value | humanizePercentage }} (threshold: 50%). Consumers may be overprovisioned. Consider reducing prefetch count (currently 20) or consumer instances."
+          summary: "Low consumer utilization detected"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#consumer-utilization-right"
+        labels:
+          severity: warning
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_growing_backlog
+        title: Growing Message Backlog on Orders Queue
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: increase(rabbitmq_queue_messages_ready{queue="orders"}[10m])
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 50
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        annotations:
+          description: "Orders queue backlog increased by {{ $values.A.Value }} messages in the last 10 minutes. Consumer processing may not be keeping up with incoming load."
+          summary: "Message backlog is growing"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#queue-backlog-left"
+        labels:
+          severity: warning
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_moderate_redelivery_rate
+        title: Moderate Message Redelivery Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="orders"}[5m])
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: mean
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        annotations:
+          description: "Message redelivery rate is {{ $values.A.Value | humanize }} msg/sec (warning threshold: 1 msg/sec). Some messages are being retried. Monitor for increasing trend."
+          summary: "Moderate redelivery rate detected"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#retry-rate-left"
+        labels:
+          severity: warning
+          component: rabbitmq
+          queue: orders
+        isPaused: false
+
+      - uid: rabbitmq_exporter_down
+        title: RabbitMQ Prometheus Exporter Down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus-rabbitmq
+            model:
+              expr: rabbitmq_up
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          description: "RabbitMQ Prometheus exporter is not responding. Metrics collection has stopped. Check exporter container status."
+          summary: "RabbitMQ monitoring unavailable"
+          runbook_url: "https://github.com/RaduTudorIon/RabbitMq.DeepDive/blob/master/RabbitMq.DeepDive.AppHost/grafana/DASHBOARD_GUIDE.md#troubleshooting"
+        labels:
+          severity: warning
+          component: monitoring
+        isPaused: false

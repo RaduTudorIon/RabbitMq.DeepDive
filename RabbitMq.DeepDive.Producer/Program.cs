@@ -1,7 +1,9 @@
 using RabbitMq.DeepDive.Messages;
 using RabbitMq.DeepDive.Producer;
+using RabbitMQ.Client.Exceptions;
 using Scalar.AspNetCore;
 using Wolverine;
+using Wolverine.ErrorHandling;
 using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,9 +29,30 @@ builder.Host.UseWolverine(opts =>
         rabbit.Password = "changeme";
         rabbit.VirtualHost = "TestVhost";
     })
+    .DisableDeadLetterQueueing()
+    .UseQuorumQueues()
     .AutoProvision();
 
-    opts.PublishMessage<OrderPlaced>().ToRabbitQueue("orders");
+    opts.PublishMessage<OrderPlaced>()
+        .ToRabbitQueue("orders")
+        .DeliverWithin(TimeSpan.FromMinutes(2))
+        .CircuitBreaking(circuit =>
+        {
+            circuit.FailuresBeforeCircuitBreaks = 5;
+            circuit.PingIntervalForCircuitResume = TimeSpan.FromSeconds(30);
+            circuit.MaximumEnvelopeRetryStorage = 200;
+        })
+        .ConfigureSending(failures =>
+        {
+            failures.OnException<BrokerUnreachableException>()
+                .PauseSending(TimeSpan.FromSeconds(15));
+
+            failures.OnAnyException()
+                .RetryWithCooldown(
+                    TimeSpan.FromMilliseconds(250),
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(5));
+        });
 });
 
 builder.Services.AddHostedService<OrderPublisherService>();
