@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.*" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="9.*" />
   </ItemGroup>
 

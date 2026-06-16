@@ -17,13 +17,16 @@ public class RabbitMqManagementController : ControllerBase
 {
     private readonly IRabbitMqApiService rabbitMqApiService;
     private readonly ILogger<RabbitMqManagementController> logger;
+    private readonly IConfiguration configuration;
 
     public RabbitMqManagementController(
         IRabbitMqApiService rabbitMqApiService,
-        ILogger<RabbitMqManagementController> logger)
+        ILogger<RabbitMqManagementController> logger,
+        IConfiguration configuration)
     {
         this.rabbitMqApiService = rabbitMqApiService;
         this.logger = logger;
+        this.configuration = configuration;
     }
 
     /// <summary>
@@ -53,19 +56,11 @@ public class RabbitMqManagementController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateShovel(
-        [FromQuery] string sourceVhost,
-        [FromQuery] string sourceQueueName,
-        [FromQuery] string destinationVhost,
-        [FromQuery] string destinationQueueName)
+        [FromQuery] string sourceVhost = "TestVhost",
+        [FromQuery] string sourceQueueName = "Orders.Q",
+        [FromQuery] string destinationVhost = "TestVhost2",
+        [FromQuery] string destinationQueueName = "ShovelOrders.Q")
     {
-        if (string.IsNullOrWhiteSpace(sourceVhost) ||
-            string.IsNullOrWhiteSpace(sourceQueueName) ||
-            string.IsNullOrWhiteSpace(destinationVhost) ||
-            string.IsNullOrWhiteSpace(destinationQueueName))
-        {
-            return BadRequest("sourceVhost, sourceQueueName, destinationVhost and destinationQueueName are required.");
-        }
-
         var shovelName = $"{sourceVhost}_{sourceQueueName}_to_{destinationVhost}_{destinationQueueName}";
         var sourceUri = $"amqp://admin:changeme@localhost/{sourceVhost}";
         var destinationUri = $"amqp://admin:changeme@localhost/{destinationVhost}";
@@ -87,6 +82,67 @@ public class RabbitMqManagementController : ControllerBase
         {
             logger.LogError(ex, "Failed to create shovel {ShovelName} in vhost {VHost}", shovelName, destinationVhost);
             return Problem("Failed to create shovel", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Creates a shovel from ShovelToCloud.Q to Azure Event Hub via AMQP.
+    /// Reads Event Hub credentials from configuration (not query params for security).
+    /// Demonstrates hybrid cloud integration: RabbitMQ → Azure Event Hubs.
+    /// </summary>
+    [HttpPost("shovels/to-eventhub")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateEventHubShovel(
+        [FromQuery] string? namespace_ = null,
+        [FromQuery] string? eventHubName = null)
+    {
+        var sourceVhost = "TestVhost";
+        var sourceQueueName = "ShovelToCloud.Q";
+        var sourceUri = $"amqp://admin:changeme@localhost:5672/{Uri.EscapeDataString(sourceVhost)}";
+
+        // Read Event Hub credentials from configuration (secrets, environment variables, or appsettings.json)
+        var sasKeyName = configuration[key: "EventHub:SasKeyName"] ?? "RootManageSharedAccessKey";
+        var sasKey = configuration["EventHub:SasKey"];
+        var eventHubNamespace = namespace_ ?? configuration["EventHub:Namespace"] ?? "adcesdemo";
+        var hub = eventHubName ?? configuration["EventHub:Name"] ?? "adces";
+
+        var shovelName = $"{sourceVhost}_{sourceQueueName}_to_{eventHubNamespace}_{hub}";
+
+        if (string.IsNullOrWhiteSpace(sasKey))
+        {
+            logger.LogError("Event Hub SAS key not configured in EventHub:SasKey");
+            return BadRequest(new { error = "Event Hub credentials not configured. Set EventHub:SasKey in configuration." });
+        }
+
+        // AMQP 1.0: hub name goes in dest-address, not the URI path
+        // sasl=plain  — use SASL PLAIN (username/password) auth
+        // verify=verify_none — skip TLS peer cert verification (Azure EH uses a trusted CA chain)
+        var destinationUri = $"amqps://{Uri.EscapeDataString(sasKeyName)}:{Uri.EscapeDataString(sasKey)}@{eventHubNamespace}.servicebus.windows.net:5671?sasl=plain&verify=verify_none";
+        try
+        {
+            await rabbitMqApiService.CreateShovelAsync(
+                sourceVhost,
+                shovelName,
+                sourceUri,
+                sourceQueueName,
+                destinationUri,
+                hub,
+                destProtocol: "amqp10");
+
+            logger.LogInformation("Created Event Hub shovel {ShovelName} → {EventHub} in {Namespace}", shovelName, hub, eventHubNamespace);
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                message = "Event Hub shovel created",
+                shovelName,
+                source = $"{sourceVhost}/{sourceQueueName}",
+                destination = $"{hub}@{eventHubNamespace}.servicebus.windows.net"
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create Event Hub shovel {ShovelName}", shovelName);
+            return Problem("Failed to create Event Hub shovel", statusCode: 500);
         }
     }
 

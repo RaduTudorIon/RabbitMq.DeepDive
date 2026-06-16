@@ -28,13 +28,13 @@ public class OrderPublisherService : BackgroundService
                 Math.Round((decimal)(Random.Shared.NextDouble() * 490 + 10), 2),
                 DateTimeOffset.UtcNow);
 
-            await bus.PublishAsync(order);
+          await bus.PublishAsync(order);
 
             logger.LogInformation(
                 "Published order {OrderId}: {ProductName} x{Quantity} @ {Price:C}",
                 order.OrderId, order.ProductName, order.Quantity, order.Price);
 
-            //await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
     }
 }

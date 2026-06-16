@@ -165,31 +165,36 @@ public class RabbitMqApiService : IRabbitMqApiService
         string destinationUri,
         string destinationQueue,
         int prefetchCount = 1000,
-        int reconnectDelaySeconds = 5)
+        int reconnectDelaySeconds = 5,
+        string destProtocol = "amqp091")
     {
         try
         {
-            _logger.LogInformation("Creating shovel {ShovelName} in vhost {VHost}", shovelName, vhost);
+            _logger.LogInformation("Creating shovel {ShovelName} in vhost {VHost} (dest-protocol={DestProtocol})", shovelName, vhost, destProtocol);
 
             var encodedVhost = Uri.EscapeDataString(vhost);
             var encodedName = Uri.EscapeDataString(shovelName);
 
-            var payload = new
+            var value = new Dictionary<string, object>
             {
-                value = new Dictionary<string, object>
-                {
-                    ["src-protocol"] = "amqp091",
-                    ["src-uri"] = sourceUri,
-                    ["src-queue"] = sourceQueue,
-                    ["dest-protocol"] = "amqp091",
-                    ["dest-uri"] = destinationUri,
-                    ["dest-queue"] = destinationQueue,
-                    ["ack-mode"] = "on-confirm",
-                    ["prefetch-count"] = prefetchCount,
-                    ["reconnect-delay"] = reconnectDelaySeconds,
-                    ["delete-after"] = "never"
-                }
+                ["src-protocol"] = "amqp091",
+                ["src-uri"] = sourceUri,
+                ["src-queue"] = sourceQueue,
+                ["dest-protocol"] = destProtocol,
+                ["dest-uri"] = destinationUri,
+                ["ack-mode"] = "on-confirm",
+                ["prefetch-count"] = prefetchCount,
+                ["reconnect-delay"] = reconnectDelaySeconds,
+                ["delete-after"] = "never"
             };
+
+            // AMQP 1.0 uses "dest-address"; AMQP 0-9-1 uses "dest-queue"
+            if (destProtocol == "amqp10")
+                value["dest-address"] = destinationQueue;
+            else
+                value["dest-queue"] = destinationQueue;
+
+            var payload = new { value };
 
             await PutAsync($"/parameters/shovel/{encodedVhost}/{encodedName}", payload);
 

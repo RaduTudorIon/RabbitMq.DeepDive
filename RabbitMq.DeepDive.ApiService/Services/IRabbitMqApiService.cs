@@ -73,9 +73,10 @@ public interface IRabbitMqApiService
     /// <param name="sourceUri">Source URI including source vhost</param>
     /// <param name="sourceQueue">Source queue name</param>
     /// <param name="destinationUri">Destination URI including destination vhost</param>
-    /// <param name="destinationQueue">Destination queue name</param>
+    /// <param name="destinationQueue">Destination queue name (AMQP 0-9-1) or address (AMQP 1.0)</param>
     /// <param name="prefetchCount">Shovel prefetch count</param>
     /// <param name="reconnectDelaySeconds">Reconnect delay in seconds</param>
+    /// <param name="destProtocol">Destination protocol: "amqp091" or "amqp10"</param>
     Task CreateShovelAsync(
         string vhost,
         string shovelName,
@@ -84,5 +85,6 @@ public interface IRabbitMqApiService
         string destinationUri,
         string destinationQueue,
         int prefetchCount = 1000,
-        int reconnectDelaySeconds = 5);
+        int reconnectDelaySeconds = 5,
+        string destProtocol = "amqp091");
 }

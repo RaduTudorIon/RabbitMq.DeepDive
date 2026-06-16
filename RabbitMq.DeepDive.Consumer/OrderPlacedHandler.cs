@@ -13,5 +13,10 @@ public class OrderPlacedHandler(ILogger<OrderPlacedHandler> logger)
             message.Quantity,
             message.Price,
             message.PlacedAt);
+
+        if (message.Quantity == 0)
+        {
+            throw new InvalidOperationException("Order quantity cannot be zero.");
+        }
     }
 }

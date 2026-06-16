@@ -42,6 +42,13 @@ var grafana = builder.AddContainer("grafana", "grafana/grafana-oss", "11.2.0")
     .WithBindMount(grafanaDashboardsPath, "/etc/grafana/provisioning/dashboards/json")
     .WaitFor(prometheus);
 
+var pgUser = builder.AddParameter("postgres-user", "admin");
+var pgPassword = builder.AddParameter("postgres-password", "changeme", secret: true);
+
+var postgres = builder.AddPostgres("postgres", userName: pgUser, password: pgPassword, port: 5432)
+    .WithDataVolume("postgres-outbox-data")
+    .AddDatabase("outboxdb");
+
 var apiService = builder.AddProject<Projects.RabbitMq_DeepDive_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
     .WithReference(rabbit)
@@ -51,7 +58,9 @@ var apiService = builder.AddProject<Projects.RabbitMq_DeepDive_ApiService>("apis
 builder.AddProject<Projects.RabbitMq_DeepDive_Producer>("producer")
     .WithHttpHealthCheck("/health")
     .WithReference(rabbit)
-    .WaitFor(rabbit);
+    .WithReference(postgres)
+    .WaitFor(rabbit)
+    .WaitFor(postgres);
 
 builder.AddProject<Projects.RabbitMq_DeepDive_Consumer>("consumer")
     .WithHttpHealthCheck("/health")

@@ -34,7 +34,7 @@ builder.Host.UseWolverine(opts =>
     var host = uri.Host;
     var port = uri.Port > 0 ? uri.Port : 5672;
 
-    opts.UseRabbitMq(rabbit =>
+    _ = opts.UseRabbitMq(rabbit =>
     {
         rabbit.HostName = host;
         rabbit.Port = port;
@@ -44,7 +44,6 @@ builder.Host.UseWolverine(opts =>
     })
     .AutoProvision()
     .UseQuorumQueues()
-    .DisableDeadLetterQueueing()
     .DeclareExchange("TestDirect.Exch", e =>
     {
         e.ExchangeType = Wolverine.RabbitMQ.ExchangeType.Direct;
@@ -60,20 +59,31 @@ builder.Host.UseWolverine(opts =>
         e.ExchangeType = Wolverine.RabbitMQ.ExchangeType.Topic;
         e.IsDurable = true;
     })
-    .DeclareExchange("orders.dlx", e =>
+    .DeclareExchange("Orders.Exch", e =>
     {
-        e.ExchangeType = Wolverine.RabbitMQ.ExchangeType.Direct;
+        e.ExchangeType = Wolverine.RabbitMQ.ExchangeType.Fanout;
         e.IsDurable = true;
     })
-    .DeclareQueue("TestDirect.Q")
+    .DeclareQueue("DirectRoutingTest.Q")
+    .DeclareQueue("DirectRoutingAdces.Q")
     .DeclareQueue("TestFanout.Q")
-    .DeclareQueue("TestTopic.Q")
-    .DeclareQueue("orders")
-    //.DeclareQueue("orders.dlq")
-    .BindExchange("TestDirect.Exch").ToQueue("TestDirect.Q", "test")
+    .DeclareQueue("TestFanout1.Q")
+    .DeclareQueue("TestFanout2.Q")
+    .DeclareQueue("TestFanout3.Q")
+    .DeclareQueue("TopicRoutingTest.Q")
+    .DeclareQueue("TopicRoutingAdces.Q")
+    .DeclareQueue("Orders.ErrorQ")
+    .DeclareQueue("ShovelToCloud.Q")
+    .BindExchange("TestDirect.Exch").ToQueue("DirectRoutingTest.Q", "test")
+    .BindExchange("TestDirect.Exch").ToQueue("DirectRoutingAdces.Q", "adces")
     .BindExchange("TestFanout.Exch").ToQueue("TestFanout.Q", "")
-    .BindExchange("TestTopic.Exch").ToQueue("TestTopic.Q", "test.#");
-    //.BindExchange("orders.dlx").ToQueue("orders.dlq", bindingKey: "orders.dead");
+    .BindExchange("TestFanout.Exch").ToQueue("TestFanout1.Q", "")
+    .BindExchange("TestFanout.Exch").ToQueue("TestFanout2.Q", "")
+    .BindExchange("TestFanout.Exch").ToQueue("TestFanout3.Q", "")
+    .BindExchange("TestTopic.Exch").ToQueue("TopicRoutingTest.Q", "rabit.*")
+    .BindExchange("TestTopic.Exch").ToQueue("TopicRoutingAdces.Q", "*.adces.#")
+
+    .BindExchange("Orders.Exch").ToQueue("Orders.Q");
 
     opts.Policies.OnAnyException()
         .RetryWithCooldown(
@@ -81,24 +91,17 @@ builder.Host.UseWolverine(opts =>
             TimeSpan.FromSeconds(1),
             TimeSpan.FromSeconds(5));
 
-    opts.Policies.OnException<InvalidOperationException>()
-        .MoveToErrorQueue();
-
-    opts.ListenToRabbitQueue("orders")
+    opts.ListenToRabbitQueue("Orders.Q")
         .PreFetchCount(20)
-        .MaximumParallelMessages(8)
+        .MaximumParallelMessages(4)
         .CircuitBreaker(cb =>
         {
             cb.MinimumThreshold = 10;
             cb.FailurePercentageThreshold = 20;
             cb.PauseTime = TimeSpan.FromSeconds(30);
             cb.TrackingPeriod = TimeSpan.FromMinutes(2);
-        });
-        //.DeadLetterQueueing(new DeadLetterQueue("orders.dlq", DeadLetterQueueMode.Native)
-        //{
-        //    ExchangeName = "orders.dlx",
-        //    BindingName = "orders.dead"
-        //});
+        })
+        .DeadLetterQueueing(new DeadLetterQueue("Orders.ErrorQ", DeadLetterQueueMode.InteropFriendly));
 });
 
 var app = builder.Build();

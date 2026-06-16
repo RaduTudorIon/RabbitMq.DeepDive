@@ -78,6 +78,15 @@
     }
   ],
   "exchanges": [],
-  "queues": [],
+  "queues": [
+    {
+      "name": "ShovelOrders.Q",
+      "vhost": "TestVhost2",
+      "durable": true,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    }
+  ],
   "bindings": []
 }
