@@ -13,6 +13,13 @@ public interface IRabbitMqApiService
     Task<string> ExportDefinitionsAsync();
 
     /// <summary>
+    /// Imports broker definitions (queues, exchanges, bindings, users, vhosts, etc.) into RabbitMQ.
+    /// This overwrites existing definitions; use with caution.
+    /// </summary>
+    /// <param name="definitionsJson">JSON string containing the definitions to import</param>
+    Task ImportDefinitionsAsync(string definitionsJson);
+
+    /// <summary>
     /// Gets all users configured in RabbitMQ
     /// </summary>
     /// <returns>JSON array of users with their tags and properties</returns>

@@ -157,6 +157,25 @@ public class RabbitMqApiService : IRabbitMqApiService
     }
 
     /// <inheritdoc />
+    public async Task ImportDefinitionsAsync(string definitionsJson)
+    {
+        try
+        {
+            _logger.LogInformation("Importing RabbitMQ broker definitions");
+            using var client = CreateAuthenticatedClient();
+            var content = new StringContent(definitionsJson, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("definitions", content);
+            response.EnsureSuccessStatusCode();
+            _logger.LogInformation("Successfully imported broker definitions");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import broker definitions");
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task CreateShovelAsync(
         string vhost,
         string shovelName,

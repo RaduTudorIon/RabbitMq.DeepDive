@@ -16,7 +16,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: rabbitmq_queue_consumers{queue="orders"}
+              expr: rabbitmq_queue_consumers{queue="Orders.Q"}
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -71,7 +71,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: rabbitmq_queue_messages_ready{queue="orders"}
+              expr: rabbitmq_queue_messages_ready{queue="Orders.Q"}
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -126,7 +126,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="orders"}[5m])
+              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="Orders.Q"}[5m])
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -240,7 +240,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: rabbitmq_queue_consumer_utilisation{queue="orders"}
+              expr: rabbitmq_queue_consumer_utilisation{queue="Orders.Q"}
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -295,7 +295,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: increase(rabbitmq_queue_messages_ready{queue="orders"}[10m])
+              expr: increase(rabbitmq_queue_messages_ready{queue="Orders.Q"}[10m])
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -350,7 +350,7 @@ groups:
               to: 0
             datasourceUid: prometheus-rabbitmq
             model:
-              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="orders"}[5m])
+              expr: rate(rabbitmq_queue_messages_redelivered_total{queue="Orders.Q"}[5m])
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200

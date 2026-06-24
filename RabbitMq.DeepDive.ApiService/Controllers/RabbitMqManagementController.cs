@@ -172,6 +172,30 @@ public class RabbitMqManagementController : ControllerBase
     }
 
     /// <summary>
+    /// Imports broker definitions (queues, exchanges, bindings, users, vhosts, etc.) into RabbitMQ.
+    /// Accepts the same JSON format exported by GET /api/rabbitmq/definitions.
+    /// </summary>
+    [HttpPost("definitions")]
+    [Consumes("application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ImportDefinitions([FromBody] JsonElement definitions)
+    {
+        try
+        {
+            var json = definitions.GetRawText();
+            await rabbitMqApiService.ImportDefinitionsAsync(json);
+            logger.LogInformation("Successfully imported broker definitions");
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to import broker definitions");
+            return Problem("Failed to import broker definitions", statusCode: 500);
+        }
+    }
+
+    /// <summary>
     /// Gets all active connections to RabbitMQ
     /// </summary>
     [HttpGet("connections")]
@@ -212,24 +236,24 @@ public class RabbitMqManagementController : ControllerBase
     /// <summary>
     /// Purges all messages from a queue (useful for demo/testing)
     /// </summary>
-    [HttpDelete("queues/{queueName}/contents")]
+    [HttpDelete("queues/{vhost}/{queueName}/contents")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> PurgeQueue(string queueName)
+    public async Task<IActionResult> PurgeQueue(string vhost, string queueName)
     {
         try
         {
-            await rabbitMqApiService.PurgeQueueAsync(queueName);
-            logger.LogInformation("Purged queue {QueueName}", queueName);
+            await rabbitMqApiService.PurgeQueueAsync(queueName, vhost);
+            logger.LogInformation("Purged queue {QueueName} in vhost {VHost}", queueName, vhost);
             return NoContent();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            return NotFound($"Queue '{queueName}' not found");
+            return NotFound($"Queue '{queueName}' not found in vhost '{vhost}'");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to purge queue {QueueName}", queueName);
+            logger.LogError(ex, "Failed to purge queue {QueueName} in vhost {VHost}", queueName, vhost);
             return Problem($"Failed to purge queue '{queueName}'", statusCode: 500);
         }
     }
